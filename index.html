@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azusa Stream - World Cup 2026</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --pitch-dark:   #060e08;
+            --pitch-deep:   #0a1a0d;
+            --pitch-card:   #0f2213;
+            --pitch-border: #1a3d1f;
+            --green-glow:   rgba(34, 197, 94, 0.12);
+            --gold:         #d4a017;
+            --red-fifa:     #c0392b;
+            --white-line:   #e8f5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--pitch-dark);
+            font-family: 'Inter', sans-serif;
+            color: var(--white-line);
+            margin: 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                180deg,
+                transparent,
+                transparent 60px,
+                rgba(255,255,255,0.012) 60px,
+                rgba(255,255,255,0.012) 62px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        nav,
+        main,
+        section,
+        footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        nav {
+            background: var(--pitch-deep);
+            border-bottom: 1px solid var(--pitch-border);
+        }
+
+        .brand-name {
+            font-family: 'Bebas Neue', 'Impact', sans-serif;
+            letter-spacing: 0.08em;
+            font-size: 1.45rem;
+            background: linear-gradient(135deg, #f0c040 0%, #22c55e 55%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 10px;
+            padding: 8px 10px;
+            box-shadow: 0 0 14px rgba(34,197,94,0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-badge::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 40%,
+                rgba(255,255,255,0.15) 50%,
+                transparent 60%
+            );
+            animation: shine 3.5s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .wc-card {
+            background: var(--pitch-card);
+            border: 1px solid var(--pitch-border);
+            border-radius: 16px;
+            box-shadow: 0 0 24px var(--green-glow);
+        }
+
+        .player-wrap {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--pitch-border);
+            background: #000;
+            position: relative;
+        }
+
+        .player-wrap::before,
+        .player-wrap::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .player-wrap::before {
+            top: 6px;
+            left: 6px;
+            border-top: 2px solid var(--gold);
+            border-left: 2px solid var(--gold);
+        }
+
+        .player-wrap::after {
+            bottom: 6px;
+            right: 6px;
+            border-bottom: 2px solid var(--gold);
+            border-right: 2px solid var(--gold);
+        }
+
+        #player-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(6,14,8,0.88);
+            transition: opacity 0.3s;
+        }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid var(--pitch-border);
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .trophy-icon {
+            color: var(--gold);
+            animation: pulse-gold 2.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { text-shadow: 0 0 6px rgba(212,160,23,0.3); }
+            50% { text-shadow: 0 0 18px rgba(240,192,64,0.7); }
+        }
+
+        .schedule-section {
+            background: var(--pitch-deep);
+            border-top: 1px solid var(--pitch-border);
+            padding: 2rem 0 3rem;
+        }
+
+        .schedule-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 0.08em;
+            background: linear-gradient(90deg, #22c55e, #f0c040);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .day-scroll {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+            margin-bottom: 18px;
+        }
+
+        .day-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .day-chip {
+            flex-shrink: 0;
+            background: var(--pitch-card);
+            border: 1px solid var(--pitch-border);
+            color: #6b9e72;
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .day-chip:hover {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .day-chip.active {
+            background: linear-gradient(135deg, #15803d, #166534);
+            border-color: #22c55e;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(22,197,94,0.25);
+        }
+
+        .day-chip.today-chip {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .day-chip.today-chip.active {
+            background: linear-gradient(135deg, #b8860b, #92650a);
+            border-color: var(--gold);
+            color: #fff;
+        }
+
+        .match-day-group {
+            margin-bottom: 24px;
+        }
+
+        .match-day-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #6b9e72;
+            padding: 6px 0 10px;
+            border-bottom: 1px solid var(--pitch-border);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .today-dot {
+            width: 7px;
+            height: 7px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse-dot 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.7); }
+        }
+
+        .match-card {
+            background: var(--pitch-card);
+            border: 1px solid var(--pitch-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .match-card:hover {
+            border-color: #22c55e44;
+            box-shadow: 0 0 14px rgba(34,197,94,0.08);
+        }
+
+        .match-card.finished {
+            border-color: rgba(212,160,23,0.28);
+        }
+
+        .match-time {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            color: #22c55e;
+            letter-spacing: 0.04em;
+            line-height: 1;
+        }
+
+        .match-time-sub {
+            font-size: 0.6rem;
+            color: #4a7a50;
+            margin-top: 1px;
+        }
+
+        .match-teams {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .match-group {
+            display: inline-block;
+            width: fit-content;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: rgba(212,160,23,0.12);
+            border: 1px solid rgba(212,160,23,0.28);
+            color: var(--gold);
+            margin-bottom: 5px;
+        }
+
+        .match-teams-row {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #d1fae5;
+        }
+
+        .match-vs {
+            font-size: 0.62rem;
+            color: #4a7a50;
+            font-weight: 400;
+        }
+
+        .match-score-box {
+            text-align: right;
+            min-width: 46px;
+        }
+
+        .match-score {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.35rem;
+            color: var(--gold);
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        .match-score-label {
+            font-size: 0.55rem;
+            color: #6b9e72;
+            margin-top: 4px;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+
+        .no-matches,
+        .schedule-error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #4a7a50;
+            font-size: 0.82rem;
+        }
+
+        .schedule-error {
+            color: #ef4444;
+        }
+
+        footer {
+            background: var(--pitch-deep);
+            border-top: 3px solid transparent;
+            border-image: linear-gradient(90deg, #22c55e 0%, #d4a017 50%, #c0392b 100%) 1;
+        }
+
+        @media (max-width: 480px) {
+            .brand-name { font-size: 1.3rem; }
+            .schedule-title { font-size: 1.55rem; }
+            .match-card { grid-template-columns: 70px 1fr auto; gap: 8px; padding: 8px 10px; }
+            .match-teams-row { font-size: 0.76rem; }
+            .match-score { font-size: 1.15rem; }
+            .match-score-box { min-width: 40px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <nav class="px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="logo-badge">
+                    <i class="fa-solid fa-futbol text-white text-lg"></i>
+                </div>
+                <div>
+                    <span class="brand-name">AZUSA STREAM</span>
+                    <div style="font-size:0.6rem;letter-spacing:0.15em;color:#6b9e72;margin-top:-4px;">
+                        WORLD CUP 2026 EDITION
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2" style="font-size:0.72rem;color:#6b9e72;">
+                <i class="fa-solid fa-trophy trophy-icon"></i>
+                <span style="color:#d4a017;font-weight:600;">USA · CAN · MEX</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl w-full mx-auto p-4 md:p-6">
+        <div class="wc-card p-4">
+            
+            <!-- BUTTON SWITCHER (3 CHANNEL & MOBILE FRIENDLY) -->
+            <div class="flex items-center gap-2 mb-3 bg-[var(--pitch-deep)] p-1 rounded-xl border border-[var(--pitch-border)] w-fit flex-wrap">
+                <button onclick="switchChannel('1')" id="btn-ch-1" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition duration-200 cursor-pointer bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md shadow-green-900/50">
+                    <i class="fa-solid fa-tv mr-1"></i> Channel 1
+                </button>
+                <button onclick="switchChannel('2')" id="btn-ch-2" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition duration-200 cursor-pointer text-[#6b9e72] hover:text-[#22c55e]">
+                    <i class="fa-solid fa-tv mr-1"></i> Channel 2
+                </button>
+                <button onclick="switchChannel('3')" id="btn-ch-3" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition duration-200 cursor-pointer text-[#6b9e72] hover:text-[#22c55e]">
+                    <i class="fa-solid fa-tv mr-1"></i> Channel 3
+                </button>
+            </div>
+
+            <div class="player-wrap aspect-video w-full">
+                <video id="video" class="w-full h-full object-contain" controls autoplay muted playsinline></video>
+                <div id="player-loading">
+                    <div class="spinner"></div>
+                    <p id="loading-text" style="font-size:0.8rem;color:#6b9e72;">Connecting to Azusa Proxy...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="schedule-section">
+        <div class="max-w-6xl mx-auto px-4 md:px-6">
+            <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+                <div>
+                    <h2 class="schedule-title">
+                        <i class="fa-solid fa-calendar-days" style="font-size:1.4rem;color:#22c55e;-webkit-text-fill-color:#22c55e;"></i>
+                        Jadwal Piala Dunia 2026
+                    </h2>
+                    <p style="font-size:0.68rem;color:#4a7a50;margin-top:2px;">
+                        Semua waktu dalam WIB (UTC+7)
+                    </p>
+                </div>
+                <div id="clock" style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#4ade80;letter-spacing:0.05em;"></div>
+            </div>
+            <div class="day-scroll" id="dayChips"></div>
+            <div id="matchList"></div>
+        </div>
+    </section>
+
+    <footer class="py-4 px-6 text-center" style="font-size:0.72rem;color:#4a7a50;">
+        <p>
+            &copy; 2026
+            <span style="color:#86efac;font-weight:600;">Azusa Stream</span>.
+            Optimized Edge Engine.
+            <span style="margin-left:8px;color:#d4a017;">
+                <i class="fa-solid fa-futbol" style="font-size:0.65rem;"></i>
+                FIFA World Cup 2026™
+            </span>
+        </p>
+    </footer>
+
+    <script>
+        // ==============================
+        // HLS PLAYER & CHANNEL SWITCHER
+        // ==============================
+        let currentChannel = '1';
+        let hlsInstance = null;
+
+        const video = document.getElementById('video');
+        const loadingOverlay = document.getElementById('player-loading');
+        const loadingText = document.getElementById('loading-text');
+
+        // Proteksi native menu browser di mobile
+        video.addEventListener('contextmenu', e => e.preventDefault());
+
+        function initPlayer(chId) {
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.classList.remove('opacity-0');
+            loadingText.style.color = '#6b9e72';
+            loadingText.innerHTML = `Connecting to Channel ${chId} Proxy...`;
+
+            const manifestUrl = `/api/manifest?ch=${chId}`;
+
+            if (hlsInstance) {
+                hlsInstance.destroy();
+            }
+
+            if (Hls.isSupported()) {
+                hlsInstance = new Hls({
+                    maxMaxBufferLength: 10,
+                    enableWorker: true,
+                    // TRIK IRIT: Menyuntikkan token otentikasi Telewebion langsung dari sisi browser client
+                    xhrSetup: function (xhr, url) {
+                        if (url.includes('telewebion.ir')) {
+                            xhr.setRequestHeader('x-dtv-key', '21X83_SECURE_PLAY');
+                            xhr.setRequestHeader('x-core', 'shield_hls');
+                        }
+                    }
+                });
+
+                hlsInstance.loadSource(manifestUrl);
+                hlsInstance.attachMedia(video);
+
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                    loadingOverlay.classList.add('opacity-0');
+                    setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
+                });
+
+                hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS error:', data);
+                    if (data.fatal) {
+                        loadingText.style.color = '#ef4444';
+                        loadingText.innerHTML = `Stream Channel ${chId} gagal dimuat / offline.`;
+                    }
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Fallback untuk Browser Safari / iOS
+                video.src = manifestUrl;
+                video.addEventListener('loadedmetadata', () => {
+                    loadingOverlay.classList.add('opacity-0');
+                    setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
+                });
+            } else {
+                loadingText.style.color = '#ef4444';
+                loadingText.innerHTML = 'Browser tidak mendukung HLS.';
+            }
+        }
+
+        function switchChannel(chId) {
+            if (currentChannel === chId) return;
+            currentChannel = chId;
+
+            const activeClass = "px-4 py-1.5 text-xs font-semibold rounded-lg transition duration-200 cursor-pointer bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md shadow-green-900/50";
+            const inactiveClass = "px-4 py-1.5 text-xs font-semibold rounded-lg transition duration-200 cursor-pointer text-[#6b9e72] hover:text-[#22c55e]";
+
+            ['1', '2', '3'].forEach(id => {
+                const btn = document.getElementById(`btn-ch-${id}`);
+                if (btn) {
+                    btn.className = (id === chId) ? activeClass : inactiveClass;
+                }
+            });
+
+            initPlayer(chId);
+        }
+
+        initPlayer('1');
+
+        // ==============================
+        // WIB CLOCK
+        // ==============================
+        function updateClock() {
+            const now = new Date();
+            const parts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            }).formatToParts(now);
+            const get = type => parts.find(part => part.type === type)?.value;
+            document.getElementById('clock').textContent = `${get('hour')}:${get('minute')}:${get('second')} WIB`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ==============================
+        // WORLD CUP 2026 SCHEDULE
+        // ==============================
+        const SCHEDULE_URL = 'https://raw.githubusercontent.com/openfootball/worldcup.json/refs/heads/master/2026/worldcup.json';
+        let MATCHES = [];
+        let activeDay = null;
+
+        const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        function parseOpenFootballDateTime(dateStr, timeStr) {
+            if (!dateStr || !timeStr) return null;
+            const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s+UTC([+-]\d{1,2})$/i);
+            if (!match) return null;
+            const [, hourRaw, minuteRaw, offsetRaw] = match;
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(Date.UTC(year, month - 1, day, Number(hourRaw) - Number(offsetRaw), Number(minuteRaw), 0));
+        }
+
+        function formatToWIB(dateObj) {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+            }).formatToParts(dateObj);
+            const get = type => parts.find(part => part.type === type)?.value;
+            return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
+        }
+
+        function getTodayWIB() { return formatToWIB(new Date()).date; }
+        
+        function formatDateLabel(dateStr) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            return `${DAY_NAMES[dateObj.getDay()]}, ${day} ${MONTH_NAMES[month - 1]}`;
+        }
+
+        function getUniqueDates() { return [...new Set(MATCHES.map(match => match.wibDate))].sort(); }
+        function normalizeGroup(match) { return match.group ? match.group : (match.round ? match.round : ''); }
+        
+        function formatScore(score) {
+            if (!score || !Array.isArray(score.ft) || score.ft.length < 2) return '';
+            if (score.ft[0] == null || score.ft[1] == null) return '';
+            return `${score.ft[0]} - ${score.ft[1]}`;
+        }
+
+        function renderDayChips() {
+            const today = getTodayWIB();
+            const dates = getUniqueDates();
+            document.getElementById('dayChips').innerHTML = dates.map(date => {
+                const isToday = date === today;
+                const isActive = activeDay === date;
+                return `<button class="day-chip${isActive ? ' active' : ''}${isToday ? ' today-chip' : ''}" onclick="setDay('${date}')">${isToday ? 'Hari Ini' : formatDateLabel(date)}</button>`;
+            }).join('');
+        }
+
+        function renderMatches() {
+            const today = getTodayWIB();
+            const matchList = document.getElementById('matchList');
+            let filteredMatches = MATCHES;
+
+            if (activeDay) filteredMatches = filteredMatches.filter(match => match.wibDate === activeDay);
+
+            if (!filteredMatches.length) {
+                matchList.innerHTML = `<div class="no-matches"><i class="fa-solid fa-calendar-xmark" style="font-size:2rem;margin-bottom:12px;color:#1a3d1f;"></i><br>Tidak ada pertandingan pada tanggal ini.</div>`;
+                return;
+            }
+
+            const groupedByDate = {};
+            filteredMatches.forEach(match => {
+                if (!groupedByDate[match.wibDate]) groupedByDate[match.wibDate] = [];
+                groupedByDate[match.wibDate].push(match);
+            });
+
+            let html = '';
+            Object.keys(groupedByDate).sort().forEach(date => {
+                const isToday = date === today;
+                html += `<div class="match-day-group"><div class="match-day-label">${isToday ? '<div class="today-dot"></div>HARI INI — ' : ''}${formatDateLabel(date).toUpperCase()}</div>`;
+                
+                groupedByDate[date].sort((a, b) => a.wibTime.localeCompare(b.wibTime)).forEach(match => {
+                    html += `
+                        <div class="match-card${match.score ? ' finished' : ''}">
+                            <div><div class="match-time">${match.wibTime}</div><div class="match-time-sub">WIB</div></div>
+                            <div class="match-teams">
+                                ${match.group ? `<div class="match-group">${escapeHtml(match.group)}</div>` : ''}
+                                <div class="match-teams-row">${escapeHtml(match.team1)}</div>
+                                <div class="match-vs">vs</div>
+                                <div class="match-teams-row">${escapeHtml(match.team2)}</div>
+                            </div>
+                            <div class="match-score-box">${match.score ? `<div class="match-score">${escapeHtml(match.score)}</div><div class="match-score-label">FT</div>` : ''}</div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+            matchList.innerHTML = html;
+        }
+
+        function setDay(date) {
+            activeDay = activeDay === date ? null : date;
+            renderDayChips();
+            renderMatches();
+        }
+
+        function escapeHtml(value) {
+            return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+        }
+
+        async function loadSchedule() {
+            const matchList = document.getElementById('matchList');
+            matchList.innerHTML = `<div class="no-matches"><div class="spinner" style="margin:0 auto 12px;"></div>Memuat jadwal...</div>`;
+
+            try {
+                const response = await fetch(SCHEDULE_URL, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (!data.matches || !Array.isArray(data.matches)) throw new Error('Format JSON tidak valid.');
+
+                MATCHES = data.matches.map(match => {
+                    const utcDate = parseOpenFootballDateTime(match.date, match.time);
+                    if (!utcDate) return null;
+                    const wib = formatToWIB(utcDate);
+                    return { team1: match.team1 || 'TBD', team2: match.team2 || 'TBD', group: normalizeGroup(match), score: formatScore(match.score), wibDate: wib.date, wibTime: wib.time };
+                }).filter(Boolean).sort((a, b) => a.wibDate.localeCompare(b.wibDate) || a.wibTime.localeCompare(b.wibTime));
+
+                const today = getTodayWIB();
+                activeDay = MATCHES.some(match => match.wibDate === today) ? today : null;
+
+                renderDayChips();
+                renderMatches();
+
+                setTimeout(() => {
+                    const activeChip = document.querySelector('.day-chip.active');
+                    if (activeChip) activeChip.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+                }, 100);
+
+            } catch (error) {
+                console.error('Gagal memuat jadwal:', error);
+                matchList.innerHTML = `<div class="schedule-error"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.6rem;margin-bottom:10px;"></i><br>Gagal memuat jadwal dari OpenFootball.<br>Cek koneksi, URL JSON, atau CORS.</div>`;
+            }
+        }
+
+        loadSchedule();
+    </script>
+</body>
+</html>
