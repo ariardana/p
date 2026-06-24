@@ -496,7 +496,7 @@
             loadingText.style.color = '#6b9e72';
             loadingText.innerHTML = `Connecting to Channel ${chId} Proxy...`;
 
-            const manifestUrl = `/api/manifest?ch=${chId}`;
+            const manifestUrl = `https://steep-boat-93d3.ariardana192.workers.dev/?ch=${chId}`;
 
             if (hlsInstance) {
                 hlsInstance.destroy();
